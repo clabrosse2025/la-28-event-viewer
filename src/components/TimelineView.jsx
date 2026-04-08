@@ -16,7 +16,7 @@ function getGamesDay(isoDate, sessions) {
   return session?.gamesDay;
 }
 
-export default function TimelineView({ sessions, forceExpand = false }) {
+export default function TimelineView({ sessions, forceExpand = false, showIcons = true }) {
   const grouped = useMemo(() => {
     const map = new Map();
     for (const s of sessions) {
@@ -62,7 +62,7 @@ export default function TimelineView({ sessions, forceExpand = false }) {
             </div>
             <div className="space-y-2 mt-2">
               {dateSessions.map((session) => (
-                <SessionRow key={session.sessionCode} session={session} forceExpand={forceExpand} />
+                <SessionRow key={session.sessionCode} session={session} forceExpand={forceExpand} showIcons={showIcons} />
               ))}
             </div>
           </section>

@@ -3,7 +3,7 @@ import SessionRow from './SessionRow';
 
 const PAGE_SIZE = 30;
 
-export default function ResultsTable({ sessions, forceExpand = false }) {
+export default function ResultsTable({ sessions, forceExpand = false, showIcons = true }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   if (sessions.length === 0) {
@@ -24,7 +24,7 @@ export default function ResultsTable({ sessions, forceExpand = false }) {
   return (
     <div className="space-y-2">
       {visible.map((session) => (
-        <SessionRow key={session.sessionCode} session={session} forceExpand={forceExpand} />
+        <SessionRow key={session.sessionCode} session={session} forceExpand={forceExpand} showIcons={showIcons} />
       ))}
       {hasMore && (
         <button

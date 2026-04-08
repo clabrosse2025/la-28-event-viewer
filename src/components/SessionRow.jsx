@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SportIcon from './SportIcon';
 
 const TYPE_STYLES = {
   Final: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
@@ -32,7 +33,7 @@ function formatTime(start, end) {
   return fmt(start);
 }
 
-export default function SessionRow({ session, forceExpand = false }) {
+export default function SessionRow({ session, forceExpand = false, showIcons = true }) {
   const [manualExpanded, setManualExpanded] = useState(false);
   const s = session;
   const hasMultiple = s.descriptions.length > 1;
@@ -62,6 +63,7 @@ export default function SessionRow({ session, forceExpand = false }) {
           {/* Main content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
+              {showIcons && <SportIcon sport={s.sport} />}
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.sport}</h3>
               {s.sessionType && (
                 <span className={`inline-flex px-2 py-0.5 text-[11px] font-medium border rounded-full ${typeStyle}`}>

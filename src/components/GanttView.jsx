@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { getSportIcon } from '../utils/sportIcons';
 
 const BASE_PX_PER_HOUR = 60;
 const BASE_ROW_HEIGHT = 36;
@@ -74,7 +75,7 @@ function assignLanes(bars) {
   return lanes.length;
 }
 
-export default function GanttView({ sessions }) {
+export default function GanttView({ sessions, showIcons = true }) {
   const [tooltip, setTooltip] = useState(null);
   const [zoomIndex, setZoomIndex] = useState(2);
   const containerRef = useRef(null);
@@ -274,9 +275,10 @@ export default function GanttView({ sessions }) {
               <div key={sport} className="flex" style={{ height: sportRowHeight }}>
                 {/* Sport label — sticky left */}
                 <div
-                  className="sticky left-0 z-10 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-b border-slate-100 dark:border-slate-700/50 flex items-center px-3"
+                  className="sticky left-0 z-10 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-1.5 px-3"
                   style={{ width: SPORT_COL_WIDTH, minWidth: SPORT_COL_WIDTH }}
                 >
+                  {showIcons && <span className="text-sm flex-shrink-0">{getSportIcon(sport)}</span>}
                   <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{sport}</span>
                 </div>
                 {/* Bar area */}

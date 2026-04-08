@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function FilterSelect({ label, items, selected, onToggle, formatLabel }) {
+export default function FilterSelect({ label, items, selected, onToggle, formatLabel, iconRenderer }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
@@ -91,6 +91,7 @@ export default function FilterSelect({ label, items, selected, onToggle, formatL
                       </svg>
                     )}
                   </span>
+                  {iconRenderer && <span className="text-sm flex-shrink-0">{iconRenderer(value)}</span>}
                   <span className="truncate flex-1 text-left">{display}</span>
                   <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">{count}</span>
                 </button>

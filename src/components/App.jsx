@@ -9,6 +9,7 @@ import ViewToggle from './ViewToggle';
 import ActiveFilters from './ActiveFilters';
 import DarkModeToggle from './DarkModeToggle';
 import GanttView from './GanttView';
+import OlympicRings from './OlympicRings';
 
 export default function App() {
   const [searchText, setSearchText] = useState('');
@@ -22,6 +23,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState('list');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [showIcons, setShowIcons] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
@@ -87,18 +89,20 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="flex gap-0.5">
-                <span className="w-2 h-2 rounded-full bg-olympic-blue"></span>
-                <span className="w-2 h-2 rounded-full bg-olympic-gold"></span>
-                <span className="w-2 h-2 rounded-full bg-olympic-red"></span>
-                <span className="w-2 h-2 rounded-full bg-olympic-green"></span>
-                <span className="w-2 h-2 rounded-full bg-black dark:bg-white"></span>
-              </div>
+              <OlympicRings className="w-10 h-5" />
               <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                 LA 2028 <span className="text-olympic-blue">Olympic</span> Events
               </h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {/* Icon toggle */}
+              <button
+                onClick={() => setShowIcons(!showIcons)}
+                title={showIcons ? 'Hide sport icons' : 'Show sport icons'}
+                className={`p-2 rounded-lg transition-colors ${showIcons ? 'text-olympic-blue bg-olympic-blue/10' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+              >
+                <span className="text-base leading-none">{showIcons ? '🏅' : '🏅'}</span>
+              </button>
               <DarkModeToggle darkMode={darkMode} onToggle={() => setDarkMode(!darkMode)} />
               <button
                 onClick={() => setFiltersOpen(!filtersOpen)}
@@ -152,6 +156,7 @@ export default function App() {
               onToggleGender={(v) => toggleFilter(setSelectedGenders, v)}
               onClearAll={clearAll}
               hasActiveFilters={hasActiveFilters}
+              showIcons={showIcons}
             />
           </aside>
 
@@ -202,7 +207,6 @@ export default function App() {
                 of {total} sessions
               </p>
               <div className="flex items-center gap-3">
-                <ViewToggle viewMode={viewMode} onToggle={setViewMode} />
                 {viewMode === 'list' && (
                   <SortControls
                     sortField={sortField}
@@ -210,16 +214,17 @@ export default function App() {
                     onSort={handleSort}
                   />
                 )}
+                <ViewToggle viewMode={viewMode} onToggle={setViewMode} />
               </div>
             </div>
             {viewMode === 'list' && (
-              <ResultsTable sessions={filtered} forceExpand={selectedGenders.size > 0} />
+              <ResultsTable sessions={filtered} forceExpand={selectedGenders.size > 0} showIcons={showIcons} />
             )}
             {viewMode === 'timeline' && (
-              <TimelineView sessions={filtered} forceExpand={selectedGenders.size > 0} />
+              <TimelineView sessions={filtered} forceExpand={selectedGenders.size > 0} showIcons={showIcons} />
             )}
             {viewMode === 'gantt' && (
-              <GanttView sessions={filtered} />
+              <GanttView sessions={filtered} showIcons={showIcons} />
             )}
           </main>
         </div>

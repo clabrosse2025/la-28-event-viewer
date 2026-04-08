@@ -1,5 +1,6 @@
 import FilterSelect from './FilterSelect';
 import { formatDateShort } from '../utils/formatDate';
+import { getSportIcon } from '../utils/sportIcons';
 
 const GENDER_OPTIONS = [
   { key: 'men', label: "Men's" },
@@ -21,7 +22,9 @@ export default function FilterPanel({
   onToggleGender,
   onClearAll,
   hasActiveFilters,
+  showIcons = true,
 }) {
+  const sportIconRenderer = showIcons ? (value) => getSportIcon(value) : null;
   return (
     <div className="space-y-4">
       {/* Gender toggle */}
@@ -52,6 +55,7 @@ export default function FilterPanel({
         items={facets.sports}
         selected={selectedSports}
         onToggle={onToggleSport}
+        iconRenderer={sportIconRenderer}
       />
       <FilterSelect
         label="Location"
