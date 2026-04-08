@@ -251,5 +251,114 @@ describe('parseQuery', () => {
     it('returns true when date extracted', () => {
       expect(hasSmartFilters(parseQuery('saturday'))).toBe(true);
     });
+
+    it('returns true when timeOfDay extracted', () => {
+      expect(hasSmartFilters(parseQuery('morning'))).toBe(true);
+    });
+  });
+
+  describe('time of day', () => {
+    it('"morning" → minHour 0, maxHour 12', () => {
+      const result = parseQuery('morning');
+      expect(result.timeOfDay).not.toBeNull();
+      expect(result.timeOfDay.label).toBe('Morning');
+      expect(result.timeOfDay.minHour).toBe(0);
+      expect(result.timeOfDay.maxHour).toBe(12);
+    });
+
+    it('"afternoon" → minHour 12, maxHour 17', () => {
+      const result = parseQuery('afternoon');
+      expect(result.timeOfDay).not.toBeNull();
+      expect(result.timeOfDay.label).toBe('Afternoon');
+      expect(result.timeOfDay.minHour).toBe(12);
+      expect(result.timeOfDay.maxHour).toBe(17);
+    });
+
+    it('"evening" → minHour 17, maxHour 24', () => {
+      const result = parseQuery('evening');
+      expect(result.timeOfDay).not.toBeNull();
+      expect(result.timeOfDay.label).toBe('Evening');
+      expect(result.timeOfDay.minHour).toBe(17);
+      expect(result.timeOfDay.maxHour).toBe(24);
+    });
+
+    it('"night" → same as evening', () => {
+      const result = parseQuery('night');
+      expect(result.timeOfDay).not.toBeNull();
+      expect(result.timeOfDay.minHour).toBe(17);
+    });
+
+    it('combines with other filters: "swimming morning"', () => {
+      const result = parseQuery('swimming morning');
+      expect(result.sports.has('Swimming')).toBe(true);
+      expect(result.timeOfDay).not.toBeNull();
+      expect(result.timeOfDay.label).toBe('Morning');
+    });
+
+    it('"evening finals at long beach"', () => {
+      const result = parseQuery('evening finals at long beach');
+      expect(result.timeOfDay.label).toBe('Evening');
+      expect(result.types.has('Final')).toBe(true);
+      expect(result.zones.has('Long Beach')).toBe(true);
+    });
+  });
+
+  describe('weekday and weekend', () => {
+    it('"weekday" → only Mon-Fri dates', () => {
+      const result = parseQuery('weekday');
+      expect(result.dates.size).toBeGreaterThan(0);
+      for (const d of result.dates) {
+        const dow = new Date(d + 'T12:00:00').getDay();
+        expect(dow).toBeGreaterThanOrEqual(1);
+        expect(dow).toBeLessThanOrEqual(5);
+      }
+    });
+
+    it('"weekdays" → only Mon-Fri dates', () => {
+      const result = parseQuery('weekdays');
+      expect(result.dates.size).toBeGreaterThan(0);
+      for (const d of result.dates) {
+        const dow = new Date(d + 'T12:00:00').getDay();
+        expect(dow).toBeGreaterThanOrEqual(1);
+        expect(dow).toBeLessThanOrEqual(5);
+      }
+    });
+
+    it('"weekend" → only Sat/Sun dates', () => {
+      const result = parseQuery('weekend');
+      expect(result.dates.size).toBeGreaterThan(0);
+      for (const d of result.dates) {
+        const dow = new Date(d + 'T12:00:00').getDay();
+        expect(dow === 0 || dow === 6).toBe(true);
+      }
+    });
+
+    it('"weekends" → only Sat/Sun dates', () => {
+      const result = parseQuery('weekends');
+      expect(result.dates.size).toBeGreaterThan(0);
+    });
+
+    it('combines: "swimming finals on weekends"', () => {
+      const result = parseQuery('swimming finals on weekends');
+      expect(result.sports.has('Swimming')).toBe(true);
+      expect(result.types.has('Final')).toBe(true);
+      expect(result.dates.size).toBeGreaterThan(0);
+      for (const d of result.dates) {
+        const dow = new Date(d + 'T12:00:00').getDay();
+        expect(dow === 0 || dow === 6).toBe(true);
+      }
+    });
+
+    it('combines: "basketball evening weekday"', () => {
+      const result = parseQuery('basketball evening weekday');
+      expect(result.sports.has('Basketball')).toBe(true);
+      expect(result.timeOfDay.label).toBe('Evening');
+      expect(result.dates.size).toBeGreaterThan(0);
+      for (const d of result.dates) {
+        const dow = new Date(d + 'T12:00:00').getDay();
+        expect(dow).toBeGreaterThanOrEqual(1);
+        expect(dow).toBeLessThanOrEqual(5);
+      }
+    });
   });
 });

@@ -11,7 +11,13 @@ function matchesGender(s, selectedGenders) {
   return false;
 }
 
-function baseFilter(s, search, selectedSports, selectedZones, selectedDates, selectedTypes, selectedGenders) {
+function parseStartHour(s) {
+  if (!s.startTime) return null;
+  const m = s.startTime.match(/^(\d+):/);
+  return m ? parseInt(m[1]) : null;
+}
+
+function baseFilter(s, search, selectedSports, selectedZones, selectedDates, selectedTypes, selectedGenders, timeOfDay) {
   if (search) {
     const haystack = [s.sport, s.venue, s.zone, s.sessionCode, s.date, s.sessionType, ...s.descriptions]
       .join(' ')
@@ -23,6 +29,11 @@ function baseFilter(s, search, selectedSports, selectedZones, selectedDates, sel
   if (selectedDates.size > 0 && !selectedDates.has(s.isoDate)) return false;
   if (selectedTypes.size > 0 && !selectedTypes.has(s.sessionType)) return false;
   if (!matchesGender(s, selectedGenders)) return false;
+  if (timeOfDay) {
+    const hour = parseStartHour(s);
+    if (hour === null) return false;
+    if (hour < timeOfDay.minHour || hour >= timeOfDay.maxHour) return false;
+  }
   return true;
 }
 
@@ -58,6 +69,7 @@ export function useFilteredSessions({
   const effectiveDates = useMemo(() => mergeSets(selectedDates, parsed.dates), [selectedDates, parsed.dates]);
   const effectiveTypes = useMemo(() => mergeSets(selectedTypes, parsed.types), [selectedTypes, parsed.types]);
   const effectiveGenders = useMemo(() => mergeSets(selectedGenders, parsed.genders), [selectedGenders, parsed.genders]);
+  const effectiveTimeOfDay = parsed.timeOfDay;
 
   // Use remainder text for substring search (or full text if no smart filters found)
   const search = useMemo(() => {
@@ -66,7 +78,7 @@ export function useFilteredSessions({
 
   const filtered = useMemo(() => {
     let result = allSessions.filter((s) =>
-      baseFilter(s, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders)
+      baseFilter(s, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders, effectiveTimeOfDay)
     );
 
     result.sort((a, b) => {
@@ -94,25 +106,25 @@ export function useFilteredSessions({
     });
 
     return result;
-  }, [allSessions, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders, sortField, sortDirection]);
+  }, [allSessions, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders, effectiveTimeOfDay, sortField, sortDirection]);
 
   const facets = useMemo(() => {
     const empty = new Set();
 
     const forSport = allSessions.filter((s) =>
-      baseFilter(s, search, empty, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders)
+      baseFilter(s, search, empty, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders, effectiveTimeOfDay)
     );
     const sportCounts = {};
     for (const s of forSport) sportCounts[s.sport] = (sportCounts[s.sport] || 0) + 1;
 
     const forZone = allSessions.filter((s) =>
-      baseFilter(s, search, effectiveSports, empty, effectiveDates, effectiveTypes, effectiveGenders)
+      baseFilter(s, search, effectiveSports, empty, effectiveDates, effectiveTypes, effectiveGenders, effectiveTimeOfDay)
     );
     const zoneCounts = {};
     for (const s of forZone) zoneCounts[s.zone] = (zoneCounts[s.zone] || 0) + 1;
 
     const forDate = allSessions.filter((s) =>
-      baseFilter(s, search, effectiveSports, effectiveZones, empty, effectiveTypes, effectiveGenders)
+      baseFilter(s, search, effectiveSports, effectiveZones, empty, effectiveTypes, effectiveGenders, effectiveTimeOfDay)
     );
     const dateCounts = {};
     for (const s of forDate) {
@@ -120,7 +132,7 @@ export function useFilteredSessions({
     }
 
     const forType = allSessions.filter((s) =>
-      baseFilter(s, search, effectiveSports, effectiveZones, effectiveDates, empty, effectiveGenders)
+      baseFilter(s, search, effectiveSports, effectiveZones, effectiveDates, empty, effectiveGenders, effectiveTimeOfDay)
     );
     const typeCounts = {};
     for (const s of forType) {
@@ -133,7 +145,7 @@ export function useFilteredSessions({
       dates: Object.entries(dateCounts).sort((a, b) => a[0].localeCompare(b[0])),
       types: Object.entries(typeCounts).sort((a, b) => a[0].localeCompare(b[0])),
     };
-  }, [allSessions, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders]);
+  }, [allSessions, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders, effectiveTimeOfDay]);
 
   return { filtered, total: allSessions.length, facets, smartFilters: smart ? parsed : null };
 }

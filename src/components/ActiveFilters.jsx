@@ -90,6 +90,9 @@ export default function ActiveFilters({
       {smartFilters && smartFilters.types.size > 0 && [...smartFilters.types].map((v) => (
         <SmartPill key={`sm-t-${v}`} label={v} color="amber" />
       ))}
+      {smartFilters && smartFilters.timeOfDay && (
+        <SmartPill key="sm-tod" label={smartFilters.timeOfDay.label} color="purple" />
+      )}
 
       {/* Manual filters (from sidebar) */}
       {[...selectedGenders].map((v) => (

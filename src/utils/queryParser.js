@@ -136,6 +136,33 @@ for (const [long, dates] of Object.entries(DAY_TO_DATES)) {
   DAY_TO_DATES[long.slice(0, 3)] = dates; // "mon", "tue", etc.
 }
 
+// Weekday / weekend → date sets
+const WEEKDAY_DATES = [];
+const WEEKEND_DATES = [];
+for (const d of OLYMPICS_DATES) {
+  const dow = new Date(d + 'T12:00:00').getDay();
+  if (dow === 0 || dow === 6) {
+    WEEKEND_DATES.push(d);
+  } else {
+    WEEKDAY_DATES.push(d);
+  }
+}
+
+// Time-of-day keywords → { label, minHour, maxHour }
+const TIME_OF_DAY = {
+  'morning': { label: 'Morning', minHour: 0, maxHour: 12 },
+  'mornings': { label: 'Morning', minHour: 0, maxHour: 12 },
+  'am': { label: 'Morning', minHour: 0, maxHour: 12 },
+  'afternoon': { label: 'Afternoon', minHour: 12, maxHour: 17 },
+  'afternoons': { label: 'Afternoon', minHour: 12, maxHour: 17 },
+  'evening': { label: 'Evening', minHour: 17, maxHour: 24 },
+  'evenings': { label: 'Evening', minHour: 17, maxHour: 24 },
+  'night': { label: 'Evening', minHour: 17, maxHour: 24 },
+  'tonight': { label: 'Evening', minHour: 17, maxHour: 24 },
+  'pm': { label: 'Afternoon/Evening', minHour: 12, maxHour: 24 },
+  'daytime': { label: 'Daytime', minHour: 7, maxHour: 17 },
+};
+
 // Month name → number
 const MONTH_MAP = {
   'january': 1, 'jan': 1, 'february': 2, 'feb': 2, 'march': 3, 'mar': 3,
@@ -177,6 +204,7 @@ export function parseQuery(text) {
     dates: new Set(),
     types: new Set(),
     genders: new Set(),
+    timeOfDay: null, // { label, minHour, maxHour } or null
     remainder: '',
   };
 
@@ -255,6 +283,28 @@ export function parseQuery(text) {
     }
   }
 
+  // 5b. Extract weekday/weekend
+  const weekdayRegex = /\bweekdays?\b/i;
+  if (weekdayRegex.test(remaining)) {
+    for (const d of WEEKDAY_DATES) result.dates.add(d);
+    remaining = remaining.replace(weekdayRegex, ' ');
+  }
+  const weekendRegex = /\bweekends?\b/i;
+  if (weekendRegex.test(remaining)) {
+    for (const d of WEEKEND_DATES) result.dates.add(d);
+    remaining = remaining.replace(weekendRegex, ' ');
+  }
+
+  // 5c. Extract time-of-day keywords
+  for (const [keyword, tod] of Object.entries(TIME_OF_DAY)) {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    if (regex.test(remaining)) {
+      result.timeOfDay = tod;
+      remaining = remaining.replace(regex, ' ');
+      break; // only one time-of-day
+    }
+  }
+
   // 6. Extract venue/zone references (longest match first)
   const venueEntries = Object.entries(VENUE_ALIASES)
     .filter(([, zone]) => zone)
@@ -284,6 +334,7 @@ export function hasSmartFilters(parsed) {
     parsed.zones.size > 0 ||
     parsed.dates.size > 0 ||
     parsed.types.size > 0 ||
-    parsed.genders.size > 0
+    parsed.genders.size > 0 ||
+    parsed.timeOfDay !== null
   );
 }
