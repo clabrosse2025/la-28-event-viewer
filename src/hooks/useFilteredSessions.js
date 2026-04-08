@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import events from '../data/events.json';
+import { parseQuery, hasSmartFilters } from '../utils/queryParser';
 
 function matchesGender(s, selectedGenders) {
   if (selectedGenders.size === 0) return true;
@@ -25,6 +26,16 @@ function baseFilter(s, search, selectedSports, selectedZones, selectedDates, sel
   return true;
 }
 
+// Merge two Sets: returns a new Set with all values from both, or the non-empty one
+function mergeSets(manual, smart) {
+  if (manual.size === 0 && smart.size === 0) return manual;
+  if (manual.size === 0) return smart;
+  if (smart.size === 0) return manual;
+  // Both active: intersect would be too restrictive, union lets both apply
+  // But for this UX, smart filters ADD to manual filters (union)
+  return new Set([...manual, ...smart]);
+}
+
 export function useFilteredSessions({
   searchText,
   selectedSports,
@@ -36,11 +47,26 @@ export function useFilteredSessions({
   sortDirection,
 }) {
   const allSessions = events;
-  const search = searchText.toLowerCase().trim();
+
+  // Parse the search text for smart filters
+  const parsed = useMemo(() => parseQuery(searchText), [searchText]);
+  const smart = useMemo(() => hasSmartFilters(parsed), [parsed]);
+
+  // Merge manual filters with smart-parsed filters
+  const effectiveSports = useMemo(() => mergeSets(selectedSports, parsed.sports), [selectedSports, parsed.sports]);
+  const effectiveZones = useMemo(() => mergeSets(selectedZones, parsed.zones), [selectedZones, parsed.zones]);
+  const effectiveDates = useMemo(() => mergeSets(selectedDates, parsed.dates), [selectedDates, parsed.dates]);
+  const effectiveTypes = useMemo(() => mergeSets(selectedTypes, parsed.types), [selectedTypes, parsed.types]);
+  const effectiveGenders = useMemo(() => mergeSets(selectedGenders, parsed.genders), [selectedGenders, parsed.genders]);
+
+  // Use remainder text for substring search (or full text if no smart filters found)
+  const search = useMemo(() => {
+    return smart ? parsed.remainder.toLowerCase().trim() : searchText.toLowerCase().trim();
+  }, [smart, parsed.remainder, searchText]);
 
   const filtered = useMemo(() => {
     let result = allSessions.filter((s) =>
-      baseFilter(s, search, selectedSports, selectedZones, selectedDates, selectedTypes, selectedGenders)
+      baseFilter(s, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders)
     );
 
     result.sort((a, b) => {
@@ -68,40 +94,33 @@ export function useFilteredSessions({
     });
 
     return result;
-  }, [allSessions, search, selectedSports, selectedZones, selectedDates, selectedTypes, selectedGenders, sortField, sortDirection]);
+  }, [allSessions, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders, sortField, sortDirection]);
 
-  // Cross-filtered facet counts: each dimension counts sessions matching
-  // all OTHER active filters (excluding its own), so users can see how many
-  // results each option would produce if selected.
   const facets = useMemo(() => {
     const empty = new Set();
 
-    // For sport counts: apply all filters EXCEPT sport
     const forSport = allSessions.filter((s) =>
-      baseFilter(s, search, empty, selectedZones, selectedDates, selectedTypes, selectedGenders)
+      baseFilter(s, search, empty, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders)
     );
     const sportCounts = {};
     for (const s of forSport) sportCounts[s.sport] = (sportCounts[s.sport] || 0) + 1;
 
-    // For zone counts: apply all filters EXCEPT zone
     const forZone = allSessions.filter((s) =>
-      baseFilter(s, search, selectedSports, empty, selectedDates, selectedTypes, selectedGenders)
+      baseFilter(s, search, effectiveSports, empty, effectiveDates, effectiveTypes, effectiveGenders)
     );
     const zoneCounts = {};
     for (const s of forZone) zoneCounts[s.zone] = (zoneCounts[s.zone] || 0) + 1;
 
-    // For date counts: apply all filters EXCEPT date
     const forDate = allSessions.filter((s) =>
-      baseFilter(s, search, selectedSports, selectedZones, empty, selectedTypes, selectedGenders)
+      baseFilter(s, search, effectiveSports, effectiveZones, empty, effectiveTypes, effectiveGenders)
     );
     const dateCounts = {};
     for (const s of forDate) {
       if (s.isoDate) dateCounts[s.isoDate] = (dateCounts[s.isoDate] || 0) + 1;
     }
 
-    // For type counts: apply all filters EXCEPT type
     const forType = allSessions.filter((s) =>
-      baseFilter(s, search, selectedSports, selectedZones, selectedDates, empty, selectedGenders)
+      baseFilter(s, search, effectiveSports, effectiveZones, effectiveDates, empty, effectiveGenders)
     );
     const typeCounts = {};
     for (const s of forType) {
@@ -114,7 +133,7 @@ export function useFilteredSessions({
       dates: Object.entries(dateCounts).sort((a, b) => a[0].localeCompare(b[0])),
       types: Object.entries(typeCounts).sort((a, b) => a[0].localeCompare(b[0])),
     };
-  }, [allSessions, search, selectedSports, selectedZones, selectedDates, selectedTypes, selectedGenders]);
+  }, [allSessions, search, effectiveSports, effectiveZones, effectiveDates, effectiveTypes, effectiveGenders]);
 
-  return { filtered, total: allSessions.length, facets };
+  return { filtered, total: allSessions.length, facets, smartFilters: smart ? parsed : null };
 }

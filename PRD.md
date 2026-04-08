@@ -36,6 +36,7 @@ The official LA 2028 competition schedule is published as a dense 35-page PDF wi
 | Feature | Description | Status |
 |---------|-------------|--------|
 | **Text search** | Full-text search across sport names, venues, locations, session codes, and event descriptions. Debounced input (200ms). Keyboard shortcut: press `/` to focus. | Complete |
+| **Smart search** | Natural language query parser. Type questions like "What swimming finals are on Saturday?" and the system extracts structured filters (sport, session type, dates, venue, gender) automatically. Recognizes sport aliases ("soccer" → Football, "polo" → Water Polo, "track" → Athletics), day names (expanded to all matching dates), venue nicknames ("coliseum" → Exposition Park), session type synonyms ("prelims", "gold medal"), and gender terms. Unrecognized words fall through to substring search. Smart-parsed filters shown as distinct pills. | Complete |
 | **Sport filter** | Multi-select dropdown with all 58 sports. Shows session count per sport. | Complete |
 | **Location filter** | Multi-select dropdown with all 25 location zones (renamed from "Zone"). | Complete |
 | **Date filter** | Multi-select dropdown for all 21 competition days (Jul 10-30). Dynamically formatted with correct weekday names. | Complete |
@@ -100,10 +101,12 @@ la-28-event-viewer/
       useFilteredSessions.js  # Core filtering, sorting, cross-filtered facets
     utils/
       formatDate.js           # Date formatting helpers
+      queryParser.js          # Smart search: NL query → structured filters
     test/
       setup.js                # Test environment setup
       data-integrity.test.js  # Validates events.json structure
       filtering.test.js       # Tests filter logic, search, sort, gender matching
+      queryParser.test.js     # Tests smart search NL parsing
       formatDate.test.js      # Tests date formatting correctness
     main.jsx                  # Entry point
     index.css                 # Tailwind imports + theme config
@@ -120,10 +123,11 @@ la-28-event-viewer/
 3. **Word-boundary gender matching** - Uses regex `\bmen's\b` instead of `String.includes("men's")` to prevent "women's" from matching the men's filter.
 4. **Per-day hour trimming in Gantt** - Each day only renders columns for hours that have events, avoiding empty 7am-8am columns on days with no early events.
 5. **Dynamic date formatting** - Uses `new Date().toLocaleDateString()` instead of hardcoded day-name maps to ensure correct weekday names.
+6. **Local smart search** - Query parser runs entirely client-side with no API calls. Uses longest-match-first strategy for multi-word terms ("track and field" before "track"), strips punctuation and stop words, and passes unrecognized text through to substring search.
 
 ## Testing
 
-### Test Coverage (27 tests)
+### Test Coverage (69 tests)
 
 **Data Integrity (7 tests)**
 - Session count within expected range
@@ -145,6 +149,20 @@ la-28-event-viewer/
 - Sort by sport with date sub-sort
 - Empty results for non-matching search
 - Cross-filtered facets update correctly
+
+**Smart Search Parser (42 tests)**
+- Sport recognition (direct names and aliases)
+- Longest-match priority ("track and field" as one match)
+- Session type synonyms (finals, prelims, gold medal, etc.)
+- Day name expansion (Saturday → all Saturday ISO dates)
+- Specific date parsing (july 22, jul 15, the 22nd)
+- Venue/zone recognition (coliseum, long beach, dtla, downtown)
+- Gender extraction (men's, women's, mixed)
+- Full natural language queries (5 complete sentence tests)
+- Stop word stripping, punctuation removal
+- Remainder passthrough for unrecognized terms
+- Edge cases (empty, null, undefined)
+- hasSmartFilters utility
 
 **Date Formatting (5 tests)**
 - Short format output

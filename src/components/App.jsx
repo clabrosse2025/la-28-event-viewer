@@ -28,7 +28,7 @@ export default function App() {
     document.body.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
-  const { filtered, total, facets } = useFilteredSessions({
+  const { filtered, total, facets, smartFilters } = useFilteredSessions({
     searchText,
     selectedSports,
     selectedZones,
@@ -126,6 +126,7 @@ export default function App() {
           selectedDates={selectedDates}
           selectedTypes={selectedTypes}
           selectedGenders={selectedGenders}
+          smartFilters={smartFilters}
           onRemoveSport={(v) => toggleFilter(setSelectedSports, v)}
           onRemoveZone={(v) => toggleFilter(setSelectedZones, v)}
           onRemoveDate={(v) => toggleFilter(setSelectedDates, v)}
