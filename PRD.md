@@ -61,6 +61,8 @@ The official LA 2028 competition schedule is published as a dense 35-page PDF wi
 | **Responsive layout** | Desktop: sidebar filters + main content. Mobile: collapsible filter drawer with overlay. Cards adapt to screen width. | Complete |
 | **Session type badges** | Color-coded: gold (Final), silver (Semifinal), blue (Quarterfinal), sky (Preliminary), emerald (Repechage), purple (Classification). | Complete |
 | **Sort controls** | Sort by Date, Sport, or Venue with ascending/descending toggle. Available in List view. | Complete |
+| **Olympic rings** | Interlocking 5-ring SVG in header. Adapts to dark mode. | Complete |
+| **Sport emoji icons** | Emoji icons for all 58 sports shown on cards, filter dropdowns, and Gantt rows. Toggleable via header button. On by default. | Complete |
 
 ## Technical Architecture
 
@@ -73,7 +75,9 @@ The official LA 2028 competition schedule is published as a dense 35-page PDF wi
 | Styling | Tailwind CSS 4.2 |
 | Testing | Vitest + React Testing Library |
 | Data parsing | Python + pdfplumber |
-| Deployment | Static site (no backend) |
+| Deployment | GitHub Pages via Actions (auto-deploy on push) |
+| CI/CD | GitHub Actions: install → test → build → deploy |
+| Live URL | https://clabrosse2025.github.io/la-28-event-viewer/ |
 
 ### File Structure
 
@@ -97,11 +101,14 @@ la-28-event-viewer/
       SortControls.jsx        # Sort field + direction toggles
       ViewToggle.jsx          # List / Timeline / Schedule switcher
       DarkModeToggle.jsx      # Dark mode icon button
+      OlympicRings.jsx        # Interlocking 5-ring SVG header logo
+      SportIcon.jsx           # Reusable sport emoji icon component
     hooks/
       useFilteredSessions.js  # Core filtering, sorting, cross-filtered facets
     utils/
       formatDate.js           # Date formatting helpers
       queryParser.js          # Smart search: NL query → structured filters
+      sportIcons.js           # Sport name → emoji icon mapping
     test/
       setup.js                # Test environment setup
       data-integrity.test.js  # Validates events.json structure
@@ -112,6 +119,9 @@ la-28-event-viewer/
     index.css                 # Tailwind imports + theme config
   index.html
   vite.config.js
+  .github/
+    workflows/
+      deploy.yml              # CI/CD: test → build → deploy to GitHub Pages
   package.json
   PRD.md
 ```
@@ -127,7 +137,7 @@ la-28-event-viewer/
 
 ## Testing
 
-### Test Coverage (69 tests)
+### Test Coverage (82 tests)
 
 **Data Integrity (7 tests)**
 - Session count within expected range
@@ -150,15 +160,18 @@ la-28-event-viewer/
 - Empty results for non-matching search
 - Cross-filtered facets update correctly
 
-**Smart Search Parser (42 tests)**
-- Sport recognition (direct names and aliases)
+**Smart Search Parser (55 tests)**
+- Sport recognition (direct names and aliases including polo → Water Polo)
 - Longest-match priority ("track and field" as one match)
 - Session type synonyms (finals, prelims, gold medal, etc.)
 - Day name expansion (Saturday → all Saturday ISO dates)
 - Specific date parsing (july 22, jul 15, the 22nd)
+- Weekday/weekend expansion (weekday → Mon-Fri dates, weekend → Sat/Sun dates)
+- Time-of-day filtering (morning → before noon, afternoon → noon-5pm, evening → after 5pm)
 - Venue/zone recognition (coliseum, long beach, dtla, downtown)
 - Gender extraction (men's, women's, mixed)
 - Full natural language queries (5 complete sentence tests)
+- Combined queries (basketball evening weekday, swimming finals evening weekend)
 - Stop word stripping, punctuation removal
 - Remainder passthrough for unrecognized terms
 - Edge cases (empty, null, undefined)
