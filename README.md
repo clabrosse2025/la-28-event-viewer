@@ -4,6 +4,7 @@ An interactive web app for browsing the LA 2028 Olympic Games competition schedu
 
 **Live demo:** [clabrosse2025.github.io/la-28-event-viewer](https://clabrosse2025.github.io/la-28-event-viewer/)
 
+<img width="1025" height="974" alt="LA 2028 Olympic Event Viewer screenshot — list view with filters and 843 sessions across 58 sports" src="https://github.com/user-attachments/assets/7626178f-9725-4211-927e-454cec0f5f7b" />
 ---
 
 ## Why I built this
